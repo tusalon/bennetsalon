@@ -1,61 +1,53 @@
+// components/WelcomeScreen.js - Bennet Salon con imagen de manicura elegante
+
 function WelcomeScreen({ onStart }) {
     return (
         <div className="min-h-screen bg-white flex flex-col relative overflow-hidden animate-fade-in">
-            {/* Background Image with Overlay */}
+            {/* Fondo con imagen de manicura profesional (Opción 1 corregida) */}
             <div className="absolute inset-0 z-0">
                 <img 
                     src="https://images.unsplash.com/photo-1604654894610-df63bc536371?q=80&w=2071&auto=format&fit=crop" 
-                    alt="Manicura profesional" 
+                    alt="Manos con esmaltado rojo elegante" 
                     className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                {/* Gradiente oscuro para que el texto resalte */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent"></div>
             </div>
 
-            {/* Content */}
+            {/* Contenido principal */}
             <div className="relative z-10 flex flex-col justify-end h-full min-h-screen p-8 pb-20 sm:justify-center sm:items-center sm:text-center sm:p-12 sm:pb-12">
                 <div className="animate-fade-in space-y-4 max-w-2xl">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/20 backdrop-blur-md border border-pink-400/30 text-pink-100 text-sm font-medium mb-2">
-                        <div className="icon-sparkles text-xs"></div>
-                        <span>Excelencia en cada detalle</span>
+                    
+                    {/* Lema con diseño de etiqueta */}
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-sm font-medium mb-2">
+                        <span className="text-pink-200">✨</span>
+                        <span>Por una mejor versión de ti</span>
+                        <span className="text-pink-200">✨</span>
                     </div>
                     
-                    <h1 className="text-5xl sm:text-6xl font-bold text-white leading-tight">
+                    {/* Título principal con gradiente brillante */}
+                    <h1 className="text-5xl sm:text-6xl font-bold text-white leading-tight drop-shadow-lg">
                         Bienvenida a <br/>
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
-                            Uñas Mágicas
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-200 via-yellow-100 to-pink-200">
+                            Bennet Salon
                         </span>
                     </h1>
                     
-                    <p className="text-gray-200 text-lg sm:text-xl max-w-lg mx-auto leading-relaxed">
-                        Descubrí el arte de lucir unas manos perfectas. Servicios profesionales de manicuría diseñados especialmente para vos.
+                    {/* Texto descriptivo mejorado */}
+                    <p className="text-white/95 text-lg sm:text-xl max-w-lg mx-auto leading-relaxed drop-shadow">
+                        Donde la belleza de tus manos cobra vida. 
+                        Un espacio pensado para vos, con servicios exclusivos.
                     </p>
 
+                    {/* Botón de llamada a la acción con diseño moderno */}
                     <div className="pt-6">
                         <button 
                             onClick={onStart}
-                            className="w-full sm:w-auto bg-pink-500 hover:bg-pink-600 text-white text-lg font-bold py-4 px-10 rounded-full shadow-lg shadow-pink-500/30 transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                            className="w-full sm:w-auto bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white text-lg font-bold py-4 px-10 rounded-full shadow-xl shadow-black/30 transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
                         >
                             Reservar Turno
-                            <div className="icon-arrow-right"></div>
+                            <div className="icon-arrow-right text-xl"></div>
                         </button>
-                    </div>
-                </div>
-            </div>
-            
-            {/* Features/Promotional strip (Optional for "vistosa") */}
-            <div className="absolute bottom-0 left-0 right-0 z-10 bg-white/10 backdrop-blur-sm border-t border-white/10 p-4 hidden sm:block">
-                <div className="max-w-4xl mx-auto flex justify-around text-white/90 text-sm font-medium">
-                    <div className="flex items-center gap-2">
-                        <div className="icon-clock text-pink-300"></div>
-                        Atención Personalizada
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="icon-star text-pink-300"></div>
-                        Productos Premium
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="icon-heart text-pink-300"></div>
-                        Ambiente Relax
                     </div>
                 </div>
             </div>

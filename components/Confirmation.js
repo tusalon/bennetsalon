@@ -1,22 +1,19 @@
+// components/Confirmation.js - Bennet Salon
+
 function Confirmation({ booking, onReset }) {
     React.useEffect(() => {
-        const phone = "5354066204"; // Número del dueño (Cuba)
-        const text = `📅 NUEVO TURNO - UÑAS MÁGICAS\n👤 Cliente: ${booking.cliente_nombre}\n📱 WhatsApp: ${booking.cliente_whatsapp}\n💅 Servicio: ${booking.servicio} (${booking.duracion} min)\n📆 Fecha: ${booking.fecha}\n⏰ Hora: ${booking.hora_inicio}`;
+        const phone = "5354438629"; // +53 54438629
+        const text = `📅 NUEVO TURNO - BENNET SALON\n👤 Cliente: ${booking.cliente_nombre}\n📱 WhatsApp: ${booking.cliente_whatsapp}\n💅 Servicio: ${booking.servicio}\n💰 Precio: $${booking.precio}\n📆 Fecha: ${booking.fecha}\n⏰ Hora: ${booking.hora_inicio}`;
         const encodedText = encodeURIComponent(text);
         
-        // Detectar si es iPhone/iPad
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         
         if (isIOS) {
-            // En iPhone: intentar abrir la app directamente con whatsapp://
             window.location.href = `whatsapp://send?phone=${phone}&text=${encodedText}`;
-            
-            // Fallback: si no tiene la app, abrir versión web
             setTimeout(() => {
                 window.location.href = `https://wa.me/${phone}?text=${encodedText}`;
             }, 500);
         } else {
-            // En Android/PC: usar web normal
             window.location.href = `https://wa.me/${phone}?text=${encodedText}`;
         }
     }, [booking]);
@@ -28,7 +25,7 @@ function Confirmation({ booking, onReset }) {
             </div>
             
             <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Turno Reservado!</h2>
-            <p className="text-gray-500 mb-8 max-w-xs mx-auto">Tu cita ha sido agendada correctamente y el dueño ha sido notificado.</p>
+            <p className="text-gray-500 mb-8 max-w-xs mx-auto">Tu cita ha sido agendada correctamente y el salón ha sido notificado.</p>
             
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-green-100 w-full max-w-sm mb-8 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
@@ -38,7 +35,6 @@ function Confirmation({ booking, onReset }) {
                         <div className="font-medium text-gray-900 text-lg">{booking.cliente_nombre}</div>
                     </div>
                     
-                    {/* 🔥 NUEVO: Mostrar el WhatsApp que el cliente ingresó */}
                     <div>
                         <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">WhatsApp</div>
                         <div className="font-medium text-gray-900">{booking.cliente_whatsapp}</div>
@@ -47,7 +43,7 @@ function Confirmation({ booking, onReset }) {
                     <div>
                         <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Servicio</div>
                         <div className="font-medium text-gray-900">{booking.servicio}</div>
-                        <div className="text-sm text-gray-500">{booking.duracion} min</div>
+                        <div className="text-sm text-gray-500">Precio: ${booking.precio}</div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -65,7 +61,7 @@ function Confirmation({ booking, onReset }) {
             <div className="flex flex-col gap-3 w-full max-w-xs">
                 <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg flex items-center justify-center gap-2">
                    <div className="icon-smartphone"></div>
-                   Contacto: +53 54066204
+                   Contacto: +53 54438629
                 </div>
                 
                 <button 

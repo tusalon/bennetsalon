@@ -1,3 +1,5 @@
+// components/Header.js - Bennet Salon
+
 function Header() {
     return (
         <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -6,10 +8,10 @@ function Header() {
                     <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-600">
                         <div className="icon-sparkles text-lg"></div>
                     </div>
-                    <h1 className="text-xl font-bold text-gray-800">Uñas Perfectas</h1>
+                    <h1 className="text-xl font-bold text-gray-800">Bennet Salon</h1>
                 </div>
                 <div className="text-sm font-medium text-gray-500">
-                    Reserva tu momento
+                    “Por una mejor versión de ti”
                 </div>
             </div>
         </header>
