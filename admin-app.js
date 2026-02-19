@@ -1,4 +1,4 @@
-// admin-app.js - Bennet Salon (VERSIÓN FINAL)
+// admin-app.js - Bennet Salon (VERSIÓN CON VERIFICACIÓN DE ID)
 
 const SUPABASE_URL = 'https://bjpzdeixwkgpiqdjwclk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqcHpkZWl4d2tncGlxZGp3Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NTUxMjIsImV4cCI6MjA4NzAzMTEyMn0.cJXxeKEj47kCir8lC91YWonuo7XN8UytBn58ki_cWoU';
@@ -18,14 +18,11 @@ async function getAllBookings() {
     return await res.json();
 }
 
-// 🔥 FUNCIÓN CORREGIDA
 async function cancelBooking(id) {
     console.log('🔄 Cancelando turno ID:', id, 'tipo:', typeof id);
     
-    const idStr = String(id);
-    
     const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=eq.${idStr}`,
+        `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=eq.${id}`,
         {
             method: 'PATCH',
             headers: {
@@ -68,6 +65,8 @@ function AdminApp() {
     }, []);
 
     const handleCancel = async (id, bookingData) => {
+        console.log('🔍 ID recibido:', id, 'tipo:', typeof id);
+        
         if (!confirm(`¿Cancelar turno de ${bookingData.cliente_nombre}?`)) return;
 
         const ok = await cancelBooking(id);
