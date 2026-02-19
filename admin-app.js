@@ -1,4 +1,4 @@
-// admin-app.js - Bennet Salon (VERSIÓN CON LOGS DE ID)
+// admin-app.js - Bennet Salon (VERSIÓN FINAL)
 
 const SUPABASE_URL = 'https://bjpzdeixwkgpiqdjwclk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqcHpkZWl4d2tncGlxZGp3Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NTUxMjIsImV4cCI6MjA4NzAzMTEyMn0.cJXxeKEj47kCir8lC91YWonuo7XN8UytBn58ki_cWoU';
@@ -18,11 +18,13 @@ async function getAllBookings() {
     return await res.json();
 }
 
+// 🔥 FUNCIÓN CON ID COMO STRING
 async function cancelBooking(id) {
-    console.log('🔄 Intentando cancelar ID:', id);
+    const idStr = String(id);
+    console.log('Cancelando ID como string:', idStr);
     
     const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=eq.${id}`,
+        `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=eq.${idStr}`,
         {
             method: 'PATCH',
             headers: {
@@ -33,8 +35,6 @@ async function cancelBooking(id) {
             body: JSON.stringify({ estado: 'Cancelado' })
         }
     );
-    
-    console.log('📡 Status:', res.status);
     return res.ok;
 }
 
@@ -65,8 +65,6 @@ function AdminApp() {
     }, []);
 
     const handleCancel = async (id, bookingData) => {
-        console.log('🔍 ID recibido en handleCancel:', id);
-        
         if (!confirm(`¿Cancelar turno de ${bookingData.cliente_nombre}?`)) return;
 
         const ok = await cancelBooking(id);
@@ -126,13 +124,8 @@ function AdminApp() {
                                             {b.estado}
                                         </span>
                                         {b.estado === 'Reservado' && (
-                                            <button 
-                                                onClick={() => {
-                                                    console.log('🖱️ Click en botón - ID:', b.id);
-                                                    handleCancel(b.id, b);
-                                                }} 
-                                                className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                                            >
+                                            <button onClick={() => handleCancel(b.id, b)} 
+                                                    className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
                                                 ✗
                                             </button>
                                         )}
@@ -170,13 +163,8 @@ function AdminApp() {
                                             </td>
                                             <td>
                                                 {b.estado === 'Reservado' && (
-                                                    <button 
-                                                        onClick={() => {
-                                                            console.log('🖱️ Click en botón - ID:', b.id);
-                                                            handleCancel(b.id, b);
-                                                        }} 
-                                                        className="p-2 bg-red-500 text-white rounded-lg"
-                                                    >
+                                                    <button onClick={() => handleCancel(b.id, b)} 
+                                                            className="p-2 bg-red-500 text-white rounded-lg">
                                                         ✗
                                                     </button>
                                                 )}
