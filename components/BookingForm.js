@@ -121,7 +121,7 @@ function BookingForm({ service, date, time, onSubmit, onCancel }) {
                                         setWhatsapp(value);
                                     }}
                                     className="w-full px-4 py-3 rounded-r-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none transition-all"
-                                    placeholder="Ej: 54066204"
+                                    placeholder="Ej: 54438629"
                                     required
                                 />
                             </div>
