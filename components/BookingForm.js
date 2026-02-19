@@ -1,10 +1,11 @@
+// components/BookingForm.js - Bennet Salon (CORREGIDO)
+
 function BookingForm({ service, date, time, onSubmit, onCancel }) {
     const [name, setName] = React.useState('');
     const [whatsapp, setWhatsapp] = React.useState('');
     const [submitting, setSubmitting] = React.useState(false);
     const [error, setError] = React.useState(null);
 
-    // Función para formatear hora a 12h
     const formatTo12Hour = (timeStr) => {
         const [hours, minutes] = timeStr.split(':').map(Number);
         const period = hours >= 12 ? 'PM' : 'AM';
@@ -36,17 +37,20 @@ function BookingForm({ service, date, time, onSubmit, onCancel }) {
             const numeroLimpio = whatsapp.replace(/\D/g, '');
             const numeroCompleto = `53${numeroLimpio}`;
 
+            // ✅ CORREGIDO: incluimos el precio
             const bookingData = {
                 cliente_nombre: name,
                 cliente_whatsapp: numeroCompleto,
                 servicio: service.name,
                 duracion: service.duration,
+                precio: service.price, // 🔥 CAMBIO IMPORTANTE
                 fecha: date,
                 hora_inicio: time,
                 hora_fin: endTime,
                 estado: "Reservado"
             };
 
+            console.log('📤 Enviando reserva:', bookingData); // Para debug
             await createBooking(bookingData);
             onSubmit(bookingData);
 
@@ -69,11 +73,14 @@ function BookingForm({ service, date, time, onSubmit, onCancel }) {
                 </div>
 
                 <div className="space-y-4">
-                    {/* Resumen del turno - AHORA CON HORA EN FORMATO 12H */}
                     <div className="bg-pink-50 p-4 rounded-xl border border-pink-100 space-y-2">
                         <div className="flex items-center gap-3 text-gray-700">
                             <div className="icon-sparkles text-pink-500"></div>
                             <span className="font-medium">{service.name}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-700">
+                            <div className="icon-tag text-pink-500"></div>
+                            <span className="font-bold text-pink-600">${service.price}</span>
                         </div>
                         <div className="flex items-center gap-3 text-gray-700">
                             <div className="icon-calendar text-pink-500"></div>
