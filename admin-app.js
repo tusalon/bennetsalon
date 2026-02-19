@@ -1,12 +1,12 @@
-// admin-app.js - Bennet Salon (CANCELACIÓN REAL)
+// admin-app.js - Bennet Salon (VERSIÓN CON LOGS)
 
 const SUPABASE_URL = 'https://bjpzdeixwkgpiqdjwclk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqcHpkZWl4d2tncGlxZGp3Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NTUxMjIsImV4cCI6MjA4NzAzMTEyMn0.cJXxeKEj47kCir8lC91YWonuo7XN8UytBn58ki_cWoU';
 
 const TABLE_NAME = 'bennet.salon';
 
-// Obtener turnos
 async function getAllBookings() {
+    console.log('📥 Obteniendo turnos...');
     const res = await fetch(
         `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=*&order=fecha.desc,hora_inicio.asc`,
         {
@@ -16,11 +16,13 @@ async function getAllBookings() {
             }
         }
     );
-    return await res.json();
+    const data = await res.json();
+    console.log('📦 Turnos recibidos:', data.length);
+    return data;
 }
 
-// 🔥 CANCELAR: Cambia estado a Cancelado (NO elimina)
 async function cancelBooking(id) {
+    console.log('🔄 Cancelando turno:', id);
     const res = await fetch(
         `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=eq.${id}`,
         {
@@ -33,6 +35,7 @@ async function cancelBooking(id) {
             body: JSON.stringify({ estado: 'Cancelado' })
         }
     );
+    console.log('📡 Respuesta cancelación:', res.status);
     return res.ok;
 }
 
@@ -50,9 +53,11 @@ function AdminApp() {
     const [filterDate, setFilterDate] = React.useState('');
 
     const fetchBookings = async () => {
+        console.log('🔄 Recargando lista...');
         setLoading(true);
         const data = await getAllBookings();
         data.sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora_inicio.localeCompare(b.hora_inicio));
+        console.log('📋 Turnos después de ordenar:', data.length);
         setBookings(data);
         setLoading(false);
     };
@@ -62,18 +67,25 @@ function AdminApp() {
     }, []);
 
     const handleCancel = async (id, bookingData) => {
-        if (!confirm(`¿Cancelar turno de ${bookingData.cliente_nombre}?`)) return;
+        console.log('🎯 Iniciando cancelación para turno:', id);
+        
+        if (!confirm(`¿Cancelar turno de ${bookingData.cliente_nombre}?`)) {
+            console.log('❌ Cancelación abortada por usuario');
+            return;
+        }
 
         const ok = await cancelBooking(id);
+        console.log('✅ Resultado cancelación:', ok);
         
         if (ok) {
-            // Enviar WhatsApp
             const msg = `❌ Turno cancelado\n\n${bookingData.cliente_nombre}, tu turno del ${bookingData.fecha} a las ${formatTo12Hour(bookingData.hora_inicio)} fue cancelado.`;
             window.open(`https://wa.me/${bookingData.cliente_whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
             
             alert('✅ Turno cancelado');
-            fetchBookings();
+            console.log('🔄 Recargando después de cancelar...');
+            await fetchBookings();
         } else {
+            console.error('❌ Error en cancelBooking');
             alert('❌ Error al cancelar');
         }
     };
@@ -82,16 +94,16 @@ function AdminApp() {
         ? bookings.filter(b => b.fecha === filterDate && b.estado !== 'Cancelado')
         : bookings.filter(b => b.estado !== 'Cancelado');
 
+    console.log('👁️ Turnos a mostrar:', filteredBookings.length);
+
     return (
         <div className="min-h-screen bg-gray-100 p-3 sm:p-6">
             <div className="max-w-6xl mx-auto space-y-4">
-                {/* Header */}
                 <div className="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center">
                     <h1 className="text-xl font-bold">Panel Admin - Bennet Salon</h1>
                     <button onClick={fetchBookings} className="p-2 bg-gray-100 rounded-full">↻</button>
                 </div>
 
-                {/* Filtro */}
                 <div className="bg-white p-4 rounded-xl shadow-sm flex gap-3">
                     <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="border rounded px-3 py-2" />
                     {filterDate && <button onClick={() => setFilterDate('')} className="text-red-500">Limpiar</button>}
@@ -102,7 +114,6 @@ function AdminApp() {
                     <div className="text-center py-12">Cargando...</div>
                 ) : (
                     <>
-                        {/* Vista Móvil */}
                         <div className="space-y-3 sm:hidden">
                             {filteredBookings.map(b => (
                                 <div key={b.id} className="bg-white p-4 rounded-xl shadow-sm">
@@ -125,7 +136,6 @@ function AdminApp() {
                             ))}
                         </div>
 
-                        {/* Vista Desktop */}
                         <div className="hidden sm:block bg-white rounded-xl shadow-sm overflow-hidden">
                             <table className="w-full">
                                 <thead className="bg-gray-50">
