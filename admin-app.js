@@ -1,63 +1,11 @@
-// admin-app.js - Bennet Salon (VERSIÓN CON VERIFICACIÓN DE ID)
+// admin-app.js - Bennet Salon (VERSIÓN FINAL)
 
 const SUPABASE_URL = 'https://bjpzdeixwkgpiqdjwclk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqcHpkZWl4d2tncGlxZGp3Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NTUxMjIsImV4cCI6MjA4NzAzMTEyMn0.cJXxeKEj47kCir8lC91YWonuo7XN8UytBn58ki_cWoU';
 
 const TABLE_NAME = 'bennet.salon';
 
-// 🔥 FUNCIÓN CORREGIDA CON VERIFICACIÓN
-async function cancelBooking(id) {
-    console.log('🔄 Cancelando turno:', id);
-    
-    // 1. Primero, verificar que el turno existe
-    const checkRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=eq.${id}&select=id,estado`,
-        {
-            headers: {
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-            }
-        }
-    );
-    const existing = await checkRes.json();
-    console.log('📦 Turno encontrado:', existing);
-    
-    if (existing.length === 0) {
-        console.error('❌ Turno no encontrado');
-        return false;
-    }
-    
-    // 2. Luego, cancelar
-    const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=eq.${id}`,
-        {
-            method: 'PATCH',
-            headers: {
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=representation'
-            },
-            body: JSON.stringify({ estado: 'Cancelado' })
-        }
-    );
-    
-    console.log('📡 Status:', res.status);
-    
-    if (res.ok) {
-        const updated = await res.json();
-        console.log('✅ Turno actualizado:', updated);
-        return true;
-    } else {
-        const error = await res.text();
-        console.error('❌ Error:', error);
-        return false;
-    }
-}
-
-// Obtener todos los turnos
 async function getAllBookings() {
-    console.log('📥 Obteniendo turnos...');
     const res = await fetch(
         `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=*&order=fecha.desc,hora_inicio.asc`,
         {
@@ -67,9 +15,30 @@ async function getAllBookings() {
             }
         }
     );
-    const data = await res.json();
-    console.log('📦 Turnos recibidos:', data.length);
-    return data;
+    return await res.json();
+}
+
+// 🔥 FUNCIÓN CORREGIDA
+async function cancelBooking(id) {
+    console.log('🔄 Cancelando turno ID:', id, 'tipo:', typeof id);
+    
+    const idStr = String(id);
+    
+    const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=eq.${idStr}`,
+        {
+            method: 'PATCH',
+            headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ estado: 'Cancelado' })
+        }
+    );
+    
+    console.log('📡 Status:', res.status);
+    return res.ok;
 }
 
 const formatTo12Hour = (timeStr) => {
@@ -87,11 +56,9 @@ function AdminApp() {
     const [filterDate, setFilterDate] = React.useState('');
 
     const fetchBookings = async () => {
-        console.log('🔄 Recargando lista...');
         setLoading(true);
         const data = await getAllBookings();
         data.sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora_inicio.localeCompare(b.hora_inicio));
-        console.log('📋 Turnos después de ordenar:', data.length);
         setBookings(data);
         setLoading(false);
     };
@@ -101,25 +68,17 @@ function AdminApp() {
     }, []);
 
     const handleCancel = async (id, bookingData) => {
-        console.log('🎯 Iniciando cancelación para turno:', id);
-        
-        if (!confirm(`¿Cancelar turno de ${bookingData.cliente_nombre}?`)) {
-            console.log('❌ Cancelación abortada por usuario');
-            return;
-        }
+        if (!confirm(`¿Cancelar turno de ${bookingData.cliente_nombre}?`)) return;
 
         const ok = await cancelBooking(id);
-        console.log('✅ Resultado cancelación:', ok);
         
         if (ok) {
             const msg = `❌ Turno cancelado\n\n${bookingData.cliente_nombre}, tu turno del ${bookingData.fecha} a las ${formatTo12Hour(bookingData.hora_inicio)} fue cancelado.`;
             window.open(`https://wa.me/${bookingData.cliente_whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
             
             alert('✅ Turno cancelado');
-            console.log('🔄 Recargando después de cancelar...');
-            await fetchBookings();
+            fetchBookings();
         } else {
-            console.error('❌ Error en cancelBooking');
             alert('❌ Error al cancelar');
         }
     };
@@ -128,30 +87,17 @@ function AdminApp() {
         ? bookings.filter(b => b.fecha === filterDate)
         : bookings;
 
-    console.log('👁️ Turnos a mostrar:', filteredBookings.length);
-
     return (
         <div className="min-h-screen bg-gray-100 p-3 sm:p-6">
             <div className="max-w-6xl mx-auto space-y-4">
-                {/* Header */}
                 <div className="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center">
                     <h1 className="text-xl font-bold">Panel Admin - Bennet Salon</h1>
                     <button onClick={fetchBookings} className="p-2 bg-gray-100 rounded-full">↻</button>
                 </div>
 
-                {/* Filtro */}
                 <div className="bg-white p-4 rounded-xl shadow-sm flex gap-3">
-                    <input 
-                        type="date" 
-                        value={filterDate}
-                        onChange={(e) => setFilterDate(e.target.value)}
-                        className="border rounded px-3 py-2"
-                    />
-                    {filterDate && (
-                        <button onClick={() => setFilterDate('')} className="text-red-500">
-                            Limpiar
-                        </button>
-                    )}
+                    <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="border rounded px-3 py-2" />
+                    {filterDate && <button onClick={() => setFilterDate('')} className="text-red-500">Limpiar</button>}
                     <span className="ml-auto">Total: {filteredBookings.length}</span>
                 </div>
 
@@ -159,7 +105,6 @@ function AdminApp() {
                     <div className="text-center py-12">Cargando...</div>
                 ) : (
                     <>
-                        {/* Vista Móvil - Tarjetas */}
                         <div className="space-y-3 sm:hidden">
                             {filteredBookings.map(b => (
                                 <div key={b.id} className="bg-white p-4 rounded-xl shadow-sm">
@@ -182,10 +127,8 @@ function AdminApp() {
                                             {b.estado}
                                         </span>
                                         {b.estado === 'Reservado' && (
-                                            <button 
-                                                onClick={() => handleCancel(b.id, b)} 
-                                                className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                                            >
+                                            <button onClick={() => handleCancel(b.id, b)} 
+                                                    className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
                                                 ✗
                                             </button>
                                         )}
@@ -194,7 +137,6 @@ function AdminApp() {
                             ))}
                         </div>
 
-                        {/* Vista Desktop - Tabla */}
                         <div className="hidden sm:block bg-white rounded-xl shadow-sm overflow-hidden">
                             <table className="w-full">
                                 <thead className="bg-gray-50">
@@ -224,10 +166,8 @@ function AdminApp() {
                                             </td>
                                             <td>
                                                 {b.estado === 'Reservado' && (
-                                                    <button 
-                                                        onClick={() => handleCancel(b.id, b)} 
-                                                        className="p-2 bg-red-500 text-white rounded-lg"
-                                                    >
+                                                    <button onClick={() => handleCancel(b.id, b)} 
+                                                            className="p-2 bg-red-500 text-white rounded-lg">
                                                         ✗
                                                     </button>
                                                 )}
