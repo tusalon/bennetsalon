@@ -1,11 +1,10 @@
-// utils/api.js - Bennet Salon (CONFIGURACIÓN CORRECTA)
+// utils/api.js - Bennet Salon (CON TABLA bennet.salon)
 
-// 🔥 NUEVAS CREDENCIALES (proyecto correcto)
 const SUPABASE_URL = 'https://bjpzdeixwkgpiqdjwclk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqcHpkZWl4d2tncGlxZGp3Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NTUxMjIsImV4cCI6MjA4NzAzMTEyMn0.cJXxeKEj47kCir8lC91YWonuo7XN8UytBn58ki_cWoU';
 
-// Nombre de la tabla (exactamente como está en Supabase)
-const TABLE_NAME = 'turnos_bennet';
+// 🔥 NUEVA TABLA (con punto)
+const TABLE_NAME = 'bennet.salon';
 
 // Cache en memoria
 const cache = {
@@ -40,7 +39,7 @@ async function getBookingsByDate(dateStr) {
     try {
         console.log('🌐 Solicitando turnos para', dateStr);
         const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?fecha=eq.${dateStr}&estado=neq.Cancelado&select=*`,
+            `${SUPABASE_URL}/rest/v1/${encodeURIComponent(TABLE_NAME)}?fecha=eq.${dateStr}&estado=neq.Cancelado&select=*`,
             {
                 headers: {
                     'apikey': SUPABASE_ANON_KEY,
@@ -90,7 +89,7 @@ async function getBookingsByDate(dateStr) {
 async function createBooking(bookingData) {
     try {
         const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/${TABLE_NAME}`,
+            `${SUPABASE_URL}/rest/v1/${encodeURIComponent(TABLE_NAME)}`,
             {
                 method: 'POST',
                 headers: {
@@ -130,7 +129,7 @@ async function getAllBookings() {
 
     try {
         const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=*&order=fecha.desc,hora_inicio.asc`,
+            `${SUPABASE_URL}/rest/v1/${encodeURIComponent(TABLE_NAME)}?select=*&order=fecha.desc,hora_inicio.asc`,
             {
                 headers: {
                     'apikey': SUPABASE_ANON_KEY,
@@ -161,7 +160,7 @@ async function getAllBookings() {
 async function updateBookingStatus(id, newStatus) {
     try {
         const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=eq.${id}`,
+            `${SUPABASE_URL}/rest/v1/${encodeURIComponent(TABLE_NAME)}?id=eq.${id}`,
             {
                 method: 'PATCH',
                 headers: {

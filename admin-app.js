@@ -1,19 +1,17 @@
-// admin-app.js - Bennet Salon (CORREGIDO)
+// admin-app.js - Bennet Salon (CON TABLA bennet.salon)
 
-// Configuración de Supabase
 const SUPABASE_URL = 'https://bjpzdeixwkgpiqdjwclk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqcHpkZWl4d2tncGlxZGp3Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NTUxMjIsImV4cCI6MjA4NzAzMTEyMn0.cJXxeKEj47kCir8lC91YWonuo7XN8UytBn58ki_cWoU';
 
-const TABLE_NAME = 'turnos_bennet';
+// 🔥 MISMA TABLA
+const TABLE_NAME = 'bennet.salon';
 
-// Cache simple
 let cache = {
     allBookings: null,
     allBookingsTimestamp: null
 };
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+const CACHE_DURATION = 5 * 60 * 1000;
 
-// Obtener todos los turnos
 async function getAllBookings() {
     if (cache.allBookings && (Date.now() - cache.allBookingsTimestamp) < CACHE_DURATION) {
         return cache.allBookings;
@@ -21,7 +19,7 @@ async function getAllBookings() {
 
     try {
         const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=*&order=fecha.desc,hora_inicio.asc`,
+            `${SUPABASE_URL}/rest/v1/${encodeURIComponent(TABLE_NAME)}?select=*&order=fecha.desc,hora_inicio.asc`,
             {
                 headers: {
                     'apikey': SUPABASE_ANON_KEY,
@@ -43,11 +41,10 @@ async function getAllBookings() {
     }
 }
 
-// Actualizar estado de un turno
 async function updateBookingStatus(id, newStatus) {
     try {
         const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=eq.${id}`,
+            `${SUPABASE_URL}/rest/v1/${encodeURIComponent(TABLE_NAME)}?id=eq.${id}`,
             {
                 method: 'PATCH',
                 headers: {
@@ -59,13 +56,8 @@ async function updateBookingStatus(id, newStatus) {
             }
         );
         
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Error response:', response.status, errorText);
-            throw new Error('Error updating booking');
-        }
+        if (!response.ok) throw new Error('Error updating booking');
         
-        // Limpiar cache
         cache.allBookings = null;
         return { success: true };
     } catch (error) {
@@ -74,7 +66,6 @@ async function updateBookingStatus(id, newStatus) {
     }
 }
 
-// Componente principal
 function AdminApp() {
     const [bookings, setBookings] = React.useState([]);
     const [loading, setLoading] = React.useState(true);
@@ -107,7 +98,6 @@ function AdminApp() {
         try {
             await updateBookingStatus(id, newStatus);
             
-            // Enviar WhatsApp al cliente
             const phone = bookingData.cliente_whatsapp;
             let mensaje = "";
             
@@ -142,20 +132,15 @@ function AdminApp() {
     return (
         <div className="min-h-screen p-6 bg-gray-100">
             <div className="max-w-5xl mx-auto space-y-6">
-                {/* Header */}
                 <div className="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center">
                     <h1 className="text-2xl font-bold text-gray-800">
                         Panel Admin - Bennet Salon
                     </h1>
-                    <button 
-                        onClick={fetchBookings}
-                        className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
-                    >
+                    <button onClick={fetchBookings} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
                         <div className="icon-refresh-cw"></div>
                     </button>
                 </div>
 
-                {/* Filtro */}
                 <div className="bg-white p-4 rounded-xl shadow-sm">
                     <input 
                         type="date" 
@@ -164,16 +149,12 @@ function AdminApp() {
                         className="border border-gray-300 rounded-lg px-3 py-2"
                     />
                     {filterDate && (
-                        <button 
-                            onClick={() => setFilterDate('')}
-                            className="ml-4 text-sm text-red-500"
-                        >
+                        <button onClick={() => setFilterDate('')} className="ml-4 text-sm text-red-500">
                             Limpiar
                         </button>
                     )}
                 </div>
 
-                {/* Lista de turnos */}
                 {loading ? (
                     <div className="text-center py-12">
                         <div className="animate-spin h-8 w-8 border-b-2 border-blue-600 rounded-full mx-auto"></div>
@@ -194,9 +175,7 @@ function AdminApp() {
                             <tbody className="divide-y">
                                 {filteredBookings.map(booking => (
                                     <tr key={booking.id}>
-                                        <td className="p-4">
-                                            {booking.fecha} {booking.hora_inicio}
-                                        </td>
+                                        <td className="p-4">{booking.fecha} {booking.hora_inicio}</td>
                                         <td className="p-4">{booking.cliente_nombre}</td>
                                         <td className="p-4">
                                             <a href={`https://wa.me/${booking.cliente_whatsapp}`} 
@@ -216,18 +195,14 @@ function AdminApp() {
                                         </td>
                                         <td className="p-4 space-x-2">
                                             {booking.estado === 'Reservado' && (
-                                                <button 
-                                                    onClick={() => handleStatusChange(booking.id, 'Confirmado', booking)}
-                                                    className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600"
-                                                >
+                                                <button onClick={() => handleStatusChange(booking.id, 'Confirmado', booking)}
+                                                        className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600">
                                                     Confirmar
                                                 </button>
                                             )}
                                             {booking.estado !== 'Cancelado' && (
-                                                <button 
-                                                    onClick={() => handleStatusChange(booking.id, 'Cancelado', booking)}
-                                                    className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                                                >
+                                                <button onClick={() => handleStatusChange(booking.id, 'Cancelado', booking)}
+                                                        className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600">
                                                     Cancelar
                                                 </button>
                                             )}
