@@ -1,45 +1,45 @@
-// utils/timeLogic.js - Bennet Salon (VERSIÓN FORZADA)
+// components/TimeSlots.js - Bennet Salon
 
-function timeToMinutes(timeStr) {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return hours * 60 + minutes;
-}
+function TimeSlots({ service, date, onTimeSelect, selectedTime }) {
+    const [slots, setSlots] = React.useState([]);
+    const [loading, setLoading] = React.useState(false);
+    const [error, setError] = React.useState(null);
 
-function minutesToTime(totalMinutes) {
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-}
+    React.useEffect(() => {
+        if (!service || !date) return;
 
-function formatTo12Hour(timeStr) {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const period = hours >= 12 ? 'PM' : 'AM';
-    let hour12 = hours % 12;
-    hour12 = hour12 === 0 ? 12 : hour12;
-    return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
-}
+        const loadSlots = async () => {
+            setLoading(true);
+            try {
+                // 1. Generar los 2 turnos base (8 AM y 2 PM)
+                const baseSlots = generateBaseSlots(service.duration);
+                
+                // 2. Obtener turnos de Supabase para esta fecha
+                // 🔥 IMPORTANTE: Solo los que NO están cancelados
+                const response = await fetch(
+                    `https://bjpzdeixwkgpiqdjwclk.supabase.co/rest/v1/bennet.salon?fecha=eq.${date}&estado=neq.Cancelado&select=*`,
+                    {
+                        headers: {
+                            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqcHpkZWl4d2tncGlxZGp3Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NTUxMjIsImV4cCI6MjA4NzAzMTEyMn0.cJXxeKEj47kCir8lC91YWonuo7XN8UytBn58ki_cWoU'
+                        }
+                    }
+                );
+                const bookings = await response.json();
+                
+                // 3. Filtrar horarios ocupados
+                let available = filterAvailableSlots(baseSlots, service.duration, bookings);
+                
+                setSlots(available);
+            } catch (err) {
+                console.error(err);
+                setError("Error al cargar horarios");
+            } finally {
+                setLoading(false);
+            }
+        };
 
-// 🔥 GENERAR SIEMPRE LOS 2 TURNOS, SIN IMPORTAR LA DURACIÓN
-function generateBaseSlots(durationMinutes) {
-    return ["08:00", "14:00"];
-}
+        loadSlots();
+    }, [service, date]);
 
-function filterAvailableSlots(baseSlots, durationMinutes, existingBookings) {
-    return baseSlots.filter(slotStartStr => {
-        const slotStart = timeToMinutes(slotStartStr);
-        const slotEnd = slotStart + durationMinutes;
-
-        const hasConflict = existingBookings.some(booking => {
-            const bookingStart = timeToMinutes(booking.hora_inicio);
-            const bookingEnd = timeToMinutes(booking.hora_fin);
-            return (slotStart < bookingEnd) && (slotEnd > bookingStart);
-        });
-
-        return !hasConflict;
-    });
-}
-
-function calculateEndTime(startTimeStr, durationMinutes) {
-    const startMins = timeToMinutes(startTimeStr);
-    return minutesToTime(startMins + durationMinutes);
+    // ... resto del código (renderizado)
 }

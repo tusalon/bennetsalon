@@ -1,4 +1,4 @@
-// admin-app.js - Bennet Salon (VERSIÓN CON LOGS)
+// admin-app.js - Bennet Salon (MUESTRA ESTADOS REALES)
 
 const SUPABASE_URL = 'https://bjpzdeixwkgpiqdjwclk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqcHpkZWl4d2tncGlxZGp3Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NTUxMjIsImV4cCI6MjA4NzAzMTEyMn0.cJXxeKEj47kCir8lC91YWonuo7XN8UytBn58ki_cWoU';
@@ -6,7 +6,6 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const TABLE_NAME = 'bennet.salon';
 
 async function getAllBookings() {
-    console.log('📥 Obteniendo turnos...');
     const res = await fetch(
         `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=*&order=fecha.desc,hora_inicio.asc`,
         {
@@ -16,13 +15,10 @@ async function getAllBookings() {
             }
         }
     );
-    const data = await res.json();
-    console.log('📦 Turnos recibidos:', data.length);
-    return data;
+    return await res.json();
 }
 
 async function cancelBooking(id) {
-    console.log('🔄 Cancelando turno:', id);
     const res = await fetch(
         `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=eq.${id}`,
         {
@@ -35,7 +31,6 @@ async function cancelBooking(id) {
             body: JSON.stringify({ estado: 'Cancelado' })
         }
     );
-    console.log('📡 Respuesta cancelación:', res.status);
     return res.ok;
 }
 
@@ -53,11 +48,9 @@ function AdminApp() {
     const [filterDate, setFilterDate] = React.useState('');
 
     const fetchBookings = async () => {
-        console.log('🔄 Recargando lista...');
         setLoading(true);
         const data = await getAllBookings();
         data.sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora_inicio.localeCompare(b.hora_inicio));
-        console.log('📋 Turnos después de ordenar:', data.length);
         setBookings(data);
         setLoading(false);
     };
@@ -67,34 +60,24 @@ function AdminApp() {
     }, []);
 
     const handleCancel = async (id, bookingData) => {
-        console.log('🎯 Iniciando cancelación para turno:', id);
-        
-        if (!confirm(`¿Cancelar turno de ${bookingData.cliente_nombre}?`)) {
-            console.log('❌ Cancelación abortada por usuario');
-            return;
-        }
+        if (!confirm(`¿Cancelar turno de ${bookingData.cliente_nombre}?`)) return;
 
         const ok = await cancelBooking(id);
-        console.log('✅ Resultado cancelación:', ok);
         
         if (ok) {
             const msg = `❌ Turno cancelado\n\n${bookingData.cliente_nombre}, tu turno del ${bookingData.fecha} a las ${formatTo12Hour(bookingData.hora_inicio)} fue cancelado.`;
             window.open(`https://wa.me/${bookingData.cliente_whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
             
             alert('✅ Turno cancelado');
-            console.log('🔄 Recargando después de cancelar...');
-            await fetchBookings();
+            fetchBookings();
         } else {
-            console.error('❌ Error en cancelBooking');
             alert('❌ Error al cancelar');
         }
     };
 
     const filteredBookings = filterDate
-        ? bookings.filter(b => b.fecha === filterDate && b.estado !== 'Cancelado')
-        : bookings.filter(b => b.estado !== 'Cancelado');
-
-    console.log('👁️ Turnos a mostrar:', filteredBookings.length);
+        ? bookings.filter(b => b.fecha === filterDate)
+        : bookings;
 
     return (
         <div className="min-h-screen bg-gray-100 p-3 sm:p-6">
@@ -114,6 +97,7 @@ function AdminApp() {
                     <div className="text-center py-12">Cargando...</div>
                 ) : (
                     <>
+                        {/* Vista Móvil - Tarjetas */}
                         <div className="space-y-3 sm:hidden">
                             {filteredBookings.map(b => (
                                 <div key={b.id} className="bg-white p-4 rounded-xl shadow-sm">
@@ -129,17 +113,37 @@ function AdminApp() {
                                         <div>💅 {b.servicio}</div>
                                     </div>
                                     <div className="flex justify-between items-center mt-3 pt-2 border-t">
-                                        <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Confirmado</span>
-                                        <button onClick={() => handleCancel(b.id, b)} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600">✗</button>
+                                        {/* 🔥 ESTADO REAL DE SUPABASE */}
+                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold
+                                            ${b.estado === 'Confirmado' ? 'bg-green-100 text-green-700' : 
+                                              b.estado === 'Reservado' ? 'bg-yellow-100 text-yellow-700' : 
+                                              'bg-red-100 text-red-700'}`}>
+                                            {b.estado}
+                                        </span>
+                                        {/* 🔥 BOTÓN SOLO PARA RESERVADO */}
+                                        {b.estado === 'Reservado' && (
+                                            <button onClick={() => handleCancel(b.id, b)} 
+                                                    className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                                ✗
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             ))}
                         </div>
 
+                        {/* Vista Desktop - Tabla */}
                         <div className="hidden sm:block bg-white rounded-xl shadow-sm overflow-hidden">
                             <table className="w-full">
                                 <thead className="bg-gray-50">
-                                    <tr><th className="p-4">Fecha/Hora</th><th>Cliente</th><th>WhatsApp</th><th>Servicio</th><th>Estado</th><th>Acción</th></tr>
+                                    <tr>
+                                        <th className="p-4">Fecha/Hora</th>
+                                        <th>Cliente</th>
+                                        <th>WhatsApp</th>
+                                        <th>Servicio</th>
+                                        <th>Estado</th>
+                                        <th>Acción</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
                                     {filteredBookings.map(b => (
@@ -148,8 +152,22 @@ function AdminApp() {
                                             <td>{b.cliente_nombre}</td>
                                             <td>{b.cliente_whatsapp}</td>
                                             <td>{b.servicio}</td>
-                                            <td><span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">Confirmado</span></td>
-                                            <td><button onClick={() => handleCancel(b.id, b)} className="p-2 bg-red-500 text-white rounded-lg">✗</button></td>
+                                            <td>
+                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold
+                                                    ${b.estado === 'Confirmado' ? 'bg-green-100 text-green-700' : 
+                                                      b.estado === 'Reservado' ? 'bg-yellow-100 text-yellow-700' : 
+                                                      'bg-red-100 text-red-700'}`}>
+                                                    {b.estado}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {b.estado === 'Reservado' && (
+                                                    <button onClick={() => handleCancel(b.id, b)} 
+                                                            className="p-2 bg-red-500 text-white rounded-lg">
+                                                        ✗
+                                                    </button>
+                                                )}
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
