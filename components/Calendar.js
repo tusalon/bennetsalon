@@ -100,7 +100,7 @@ function Calendar({ onDateSelect, selectedDate }) {
                             const sunday = isSunday(date);
                             const selected = isSelected(date);
                             
-                            // Un día está disponible si NO es pasado y NO es domingo
+                            // Un día está disponible si  es pasado y NO es domingo
                             const available = !past && !sunday;
                             
                             let dayStyle = "h-10 w-full flex items-center justify-center rounded-lg text-sm font-medium transition-all";
