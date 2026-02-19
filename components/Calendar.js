@@ -1,19 +1,30 @@
-// components/Calendar.js - Bennet Salon
+// components/Calendar.js - Bennet Salon (CORREGIDO)
 
 function Calendar({ onDateSelect, selectedDate }) {
     const [currentDate, setCurrentDate] = React.useState(new Date());
     
+    // Obtener fecha de HOY a las 00:00
     const getToday = () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         return today;
     };
 
-    const isPastDate = (date) => {
-        const today = getToday();
-        return date < today;
+    // Fecha de MAÑANA (primer día disponible)
+    const getTomorrow = () => {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        return tomorrow;
     };
 
+    // Verificar si una fecha es PASADA (antes de hoy)
+    const isPastDate = (date) => {
+        const today = getToday();
+        return date < today; // Fechas menores a hoy = pasadas
+    };
+
+    // Verificar si es DOMINGO (cerrado)
     const isSunday = (date) => {
         return date && date.getDay() === 0;
     };
@@ -89,6 +100,7 @@ function Calendar({ onDateSelect, selectedDate }) {
                             const sunday = isSunday(date);
                             const selected = isSelected(date);
                             
+                            // Un día está disponible si NO es pasado y NO es domingo
                             const available = !past && !sunday;
                             
                             let dayStyle = "h-10 w-full flex items-center justify-center rounded-lg text-sm font-medium transition-all";
@@ -96,7 +108,7 @@ function Calendar({ onDateSelect, selectedDate }) {
                             if (selected) {
                                 dayStyle += " bg-gray-900 text-white shadow-md scale-105";
                             } else if (!available) {
-                                dayStyle += " text-gray-300 cursor-not-allowed bg-gray-50";
+                                dayStyle += " text-gray-300 cursor-not-allowed bg-gray-50 line-through decoration-gray-400";
                             } else {
                                 dayStyle += " text-gray-700 hover:bg-pink-50 hover:text-pink-600 cursor-pointer";
                             }
@@ -114,6 +126,11 @@ function Calendar({ onDateSelect, selectedDate }) {
                         })}
                     </div>
                 </div>
+            </div>
+            
+            {/* Mensaje informativo */}
+            <div className="text-sm text-gray-500 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                <span className="font-medium">📅 Disponible desde:</span> mañana
             </div>
         </div>
     );

@@ -1,4 +1,4 @@
-// utils/timeLogic.js - Bennet Salon (solo 2 turnos)
+// utils/timeLogic.js - Bennet Salon
 
 function timeToMinutes(timeStr) {
     const [hours, minutes] = timeStr.split(':').map(Number);
@@ -19,7 +19,7 @@ function formatTo12Hour(timeStr) {
     return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
 }
 
-// SOLO 2 TURNOS: 8:00 AM y 2:00 PM
+// SOLO 2 TURNOS: 8:00 AM y 2:00 PM - PARA CUALQUIER FECHA
 function generateBaseSlots(durationMinutes) {
     return ["08:00", "14:00"];
 }

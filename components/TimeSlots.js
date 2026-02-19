@@ -1,19 +1,11 @@
-// components/TimeSlots.js - Versión con formato 12h (AM/PM)
+// components/TimeSlots.js - Bennet Salon (CORREGIDO)
 
 function TimeSlots({ service, date, onTimeSelect, selectedTime }) {
     const [slots, setSlots] = React.useState([]);
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState(null);
 
-    // Función para obtener la hora actual en formato 24h para comparar
-    const getCurrentTimeString = () => {
-        const now = new Date();
-        const hours = now.getHours().toString().padStart(2, '0');
-        const minutes = now.getMinutes().toString().padStart(2, '0');
-        return `${hours}:${minutes}`;
-    };
-
-    // Función para comparar horas (usa formato 24h internamente)
+    // Función para comparar horas (solo para hoy)
     const isTimePast = (timeStr24) => {
         const now = new Date();
         const currentHour = now.getHours();
@@ -33,7 +25,7 @@ function TimeSlots({ service, date, onTimeSelect, selectedTime }) {
             setLoading(true);
             setError(null);
             try {
-                // 1. Generar todos los horarios posibles (en formato 24h)
+                // 1. Generar los 2 turnos base (8 AM y 2 PM)
                 const baseSlots = generateBaseSlots(service.duration);
                 
                 // 2. Verificar si la fecha seleccionada es HOY
@@ -41,13 +33,13 @@ function TimeSlots({ service, date, onTimeSelect, selectedTime }) {
                 const todayStr = today.toISOString().split('T')[0];
                 const isToday = date === todayStr;
                 
-                // 3. Obtener turnos ocupados
+                // 3. Obtener turnos ocupados de Supabase
                 const bookings = await getBookingsByDate(date);
                 
                 // 4. Filtrar horarios ocupados
                 let available24h = filterAvailableSlots(baseSlots, service.duration, bookings);
                 
-                // 5. Si es HOY, filtrar también las horas que ya pasaron
+                // 5. Si es HOY, filtrar también las horas que YA PASARON
                 if (isToday) {
                     available24h = available24h.filter(time => !isTimePast(time));
                 }
@@ -87,28 +79,27 @@ function TimeSlots({ service, date, onTimeSelect, selectedTime }) {
                 </div>
             ) : (
                 <>
-                    {/* Mensaje de horarios */}
+                    {/* Mensaje de horarios - CORREGIDO */}
                     <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded-lg flex items-center gap-2">
                         <div className="icon-info"></div>
-                        <span>⏰ Mañana: 9 AM - 12 PM | Tarde: 1 PM - 6 PM</span>
+                        <span>⏰ Horarios disponibles: 8:00 AM y 2:00 PM</span>
                     </div>
                     
-                    {/* Mensaje si es hoy y hay horarios filtrados */}
+                    {/* Mensaje si es hoy */}
                     {date === new Date().toISOString().split('T')[0] && (
                         <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded-lg flex items-center gap-2">
                             <div className="icon-clock text-amber-500"></div>
-                            <span>Solo se muestran horarios a partir de ahora</span>
+                            <span>Solo se muestran horarios futuros para hoy</span>
                         </div>
                     )}
                     
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
                         {slots.map(time24h => {
-                            // Convertir a formato 12h para mostrar
                             const time12h = formatTo12Hour(time24h);
                             return (
                                 <button
                                     key={time24h}
-                                    onClick={() => onTimeSelect(time24h)} // Guardamos en 24h
+                                    onClick={() => onTimeSelect(time24h)}
                                     className={`
                                         py-2 px-3 rounded-lg text-sm font-semibold transition-all shadow-sm
                                         ${selectedTime === time24h
@@ -116,7 +107,7 @@ function TimeSlots({ service, date, onTimeSelect, selectedTime }) {
                                             : 'bg-white text-green-700 border border-green-200 hover:bg-green-50 hover:border-green-300'}
                                     `}
                                 >
-                                    {time12h} {/* Mostramos 12h */}
+                                    {time12h}
                                 </button>
                             );
                         })}
