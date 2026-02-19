@@ -1,11 +1,10 @@
-// components/TimeSlots.js - Bennet Salon (CORREGIDO)
+// components/TimeSlots.js - Bennet Salon (VERSIÓN DEFINITIVA)
 
 function TimeSlots({ service, date, onTimeSelect, selectedTime }) {
     const [slots, setSlots] = React.useState([]);
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState(null);
 
-    // Función para comparar horas (solo para hoy)
     const isTimePast = (timeStr24) => {
         const now = new Date();
         const currentHour = now.getHours();
@@ -25,26 +24,18 @@ function TimeSlots({ service, date, onTimeSelect, selectedTime }) {
             setLoading(true);
             setError(null);
             try {
-                // 1. Generar los 2 turnos base (8 AM y 2 PM)
                 const baseSlots = generateBaseSlots(service.duration);
-                
-                // 2. Verificar si la fecha seleccionada es HOY
                 const today = new Date();
                 const todayStr = today.toISOString().split('T')[0];
                 const isToday = date === todayStr;
-                
-                // 3. Obtener turnos ocupados de Supabase
                 const bookings = await getBookingsByDate(date);
+                let available = filterAvailableSlots(baseSlots, service.duration, bookings);
                 
-                // 4. Filtrar horarios ocupados
-                let available24h = filterAvailableSlots(baseSlots, service.duration, bookings);
-                
-                // 5. Si es HOY, filtrar también las horas que YA PASARON
                 if (isToday) {
-                    available24h = available24h.filter(time => !isTimePast(time));
+                    available = available.filter(time => !isTimePast(time));
                 }
                 
-                setSlots(available24h);
+                setSlots(available);
             } catch (err) {
                 console.error(err);
                 setError("Error al cargar horarios");
@@ -79,13 +70,11 @@ function TimeSlots({ service, date, onTimeSelect, selectedTime }) {
                 </div>
             ) : (
                 <>
-                    {/* Mensaje de horarios - CORREGIDO */}
                     <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded-lg flex items-center gap-2">
                         <div className="icon-info"></div>
                         <span>⏰ Horarios disponibles: 8:00 AM y 2:00 PM</span>
                     </div>
                     
-                    {/* Mensaje si es hoy */}
                     {date === new Date().toISOString().split('T')[0] && (
                         <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded-lg flex items-center gap-2">
                             <div className="icon-clock text-amber-500"></div>
