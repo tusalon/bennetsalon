@@ -1,21 +1,9 @@
-// components/TimeSlots.js - Bennet Salon (VERSIÓN DEFINITIVA)
+// components/TimeSlots.js - Bennet Salon (COMPLETO)
 
 function TimeSlots({ service, date, onTimeSelect, selectedTime }) {
     const [slots, setSlots] = React.useState([]);
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState(null);
-
-    const isTimePast = (timeStr24) => {
-        const now = new Date();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-        
-        const [slotHour, slotMinute] = timeStr24.split(':').map(Number);
-        
-        if (slotHour < currentHour) return true;
-        if (slotHour === currentHour && slotMinute < currentMinute) return true;
-        return false;
-    };
 
     React.useEffect(() => {
         if (!service || !date) return;
@@ -24,12 +12,32 @@ function TimeSlots({ service, date, onTimeSelect, selectedTime }) {
             setLoading(true);
             setError(null);
             try {
+                // 1. Generar los 2 turnos base (8 AM y 2 PM)
                 const baseSlots = generateBaseSlots(service.duration);
+                
+                // 2. Obtener turnos de Supabase para esta fecha (solo no cancelados)
+                const response = await fetch(
+                    `https://bjpzdeixwkgpiqdjwclk.supabase.co/rest/v1/bennet.salon?fecha=eq.${date}&estado=neq.Cancelado&select=*`,
+                    {
+                        headers: {
+                            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqcHpkZWl4d2tncGlxZGp3Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NTUxMjIsImV4cCI6MjA4NzAzMTEyMn0.cJXxeKEj47kCir8lC91YWonuo7XN8UytBn58ki_cWoU'
+                        }
+                    }
+                );
+                
+                if (!response.ok) {
+                    throw new Error('Error al cargar turnos');
+                }
+                
+                const bookings = await response.json();
+                
+                // 3. Filtrar horarios ocupados
+                let available = filterAvailableSlots(baseSlots, service.duration, bookings);
+                
+                // 4. Verificar si es hoy para filtrar horas pasadas
                 const today = new Date();
                 const todayStr = today.toISOString().split('T')[0];
                 const isToday = date === todayStr;
-                const bookings = await getBookingsByDate(date);
-                let available = filterAvailableSlots(baseSlots, service.duration, bookings);
                 
                 if (isToday) {
                     available = available.filter(time => !isTimePast(time));
@@ -46,6 +54,19 @@ function TimeSlots({ service, date, onTimeSelect, selectedTime }) {
 
         loadSlots();
     }, [service, date]);
+
+    // Función para verificar si una hora ya pasó (solo para hoy)
+    const isTimePast = (timeStr24) => {
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        
+        const [slotHour, slotMinute] = timeStr24.split(':').map(Number);
+        
+        if (slotHour < currentHour) return true;
+        if (slotHour === currentHour && slotMinute < currentMinute) return true;
+        return false;
+    };
 
     if (!service || !date) return null;
 
