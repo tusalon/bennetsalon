@@ -1,4 +1,4 @@
-// admin-app.js - Bennet Salon (MUESTRA ESTADOS REALES)
+// admin-app.js - Bennet Salon (VERSIÓN QUE SÍ FUNCIONA)
 
 const SUPABASE_URL = 'https://bjpzdeixwkgpiqdjwclk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqcHpkZWl4d2tncGlxZGp3Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NTUxMjIsImV4cCI6MjA4NzAzMTEyMn0.cJXxeKEj47kCir8lC91YWonuo7XN8UytBn58ki_cWoU';
@@ -18,7 +18,10 @@ async function getAllBookings() {
     return await res.json();
 }
 
+// 🔥 FUNCIÓN CORREGIDA - Usa el método PATCH correctamente
 async function cancelBooking(id) {
+    console.log('🔄 Cancelando turno:', id);
+    
     const res = await fetch(
         `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=eq.${id}`,
         {
@@ -26,12 +29,23 @@ async function cancelBooking(id) {
             headers: {
                 'apikey': SUPABASE_ANON_KEY,
                 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
             },
             body: JSON.stringify({ estado: 'Cancelado' })
         }
     );
-    return res.ok;
+    
+    console.log('📡 Status:', res.status);
+    
+    if (res.ok) {
+        console.log('✅ Turno cancelado en Supabase');
+        return true;
+    } else {
+        const error = await res.text();
+        console.error('❌ Error:', error);
+        return false;
+    }
 }
 
 const formatTo12Hour = (timeStr) => {
@@ -97,7 +111,6 @@ function AdminApp() {
                     <div className="text-center py-12">Cargando...</div>
                 ) : (
                     <>
-                        {/* Vista Móvil - Tarjetas */}
                         <div className="space-y-3 sm:hidden">
                             {filteredBookings.map(b => (
                                 <div key={b.id} className="bg-white p-4 rounded-xl shadow-sm">
@@ -113,14 +126,12 @@ function AdminApp() {
                                         <div>💅 {b.servicio}</div>
                                     </div>
                                     <div className="flex justify-between items-center mt-3 pt-2 border-t">
-                                        {/* 🔥 ESTADO REAL DE SUPABASE */}
                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold
                                             ${b.estado === 'Confirmado' ? 'bg-green-100 text-green-700' : 
                                               b.estado === 'Reservado' ? 'bg-yellow-100 text-yellow-700' : 
                                               'bg-red-100 text-red-700'}`}>
                                             {b.estado}
                                         </span>
-                                        {/* 🔥 BOTÓN SOLO PARA RESERVADO */}
                                         {b.estado === 'Reservado' && (
                                             <button onClick={() => handleCancel(b.id, b)} 
                                                     className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
@@ -132,7 +143,6 @@ function AdminApp() {
                             ))}
                         </div>
 
-                        {/* Vista Desktop - Tabla */}
                         <div className="hidden sm:block bg-white rounded-xl shadow-sm overflow-hidden">
                             <table className="w-full">
                                 <thead className="bg-gray-50">
