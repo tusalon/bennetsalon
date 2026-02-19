@@ -1,12 +1,85 @@
-// admin-app.js - Bennet Salon (VERSIÓN CON UN SOLO BOTÓN - CANCELAR)
+// admin-app.js - Bennet Salon (VERSIÓN CON VERIFICACIÓN DE ID)
 
 const SUPABASE_URL = 'https://bjpzdeixwkgpiqdjwclk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqcHpkZWl4d2tncGlxZGp3Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NTUxMjIsImV4cCI6MjA4NzAzMTEyMn0.cJXxeKEj47kCir8lC91YWonuo7XN8UytBn58ki_cWoU';
 
 const TABLE_NAME = 'bennet.salon';
 
-// 🔥 IMPORTAR FUNCIONES DE API.JS (ASUMIMOS QUE ESTÁN DISPONIBLES)
-// updateBookingStatus debe estar definida en api.js
+// 🔥 FUNCIÓN CORREGIDA CON VERIFICACIÓN
+async function cancelBooking(id) {
+    console.log('🔄 Cancelando turno:', id);
+    
+    // 1. Primero, verificar que el turno existe
+    const checkRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=eq.${id}&select=id,estado`,
+        {
+            headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            }
+        }
+    );
+    const existing = await checkRes.json();
+    console.log('📦 Turno encontrado:', existing);
+    
+    if (existing.length === 0) {
+        console.error('❌ Turno no encontrado');
+        return false;
+    }
+    
+    // 2. Luego, cancelar
+    const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=eq.${id}`,
+        {
+            method: 'PATCH',
+            headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({ estado: 'Cancelado' })
+        }
+    );
+    
+    console.log('📡 Status:', res.status);
+    
+    if (res.ok) {
+        const updated = await res.json();
+        console.log('✅ Turno actualizado:', updated);
+        return true;
+    } else {
+        const error = await res.text();
+        console.error('❌ Error:', error);
+        return false;
+    }
+}
+
+// Obtener todos los turnos
+async function getAllBookings() {
+    console.log('📥 Obteniendo turnos...');
+    const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=*&order=fecha.desc,hora_inicio.asc`,
+        {
+            headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            }
+        }
+    );
+    const data = await res.json();
+    console.log('📦 Turnos recibidos:', data.length);
+    return data;
+}
+
+const formatTo12Hour = (timeStr) => {
+    if (!timeStr) return '';
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    let hour12 = hours % 12;
+    hour12 = hour12 === 0 ? 12 : hour12;
+    return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
+};
 
 function AdminApp() {
     const [bookings, setBookings] = React.useState([]);
@@ -14,12 +87,11 @@ function AdminApp() {
     const [filterDate, setFilterDate] = React.useState('');
 
     const fetchBookings = async () => {
+        console.log('🔄 Recargando lista...');
         setLoading(true);
         const data = await getAllBookings();
-        data.sort((a, b) => {
-            if (a.fecha !== b.fecha) return a.fecha.localeCompare(b.fecha);
-            return a.hora_inicio.localeCompare(b.hora_inicio);
-        });
+        data.sort((a, b) => a.fecha.localeCompare(b.fecha) || a.hora_inicio.localeCompare(b.hora_inicio));
+        console.log('📋 Turnos después de ordenar:', data.length);
         setBookings(data);
         setLoading(false);
     };
@@ -28,106 +100,144 @@ function AdminApp() {
         fetchBookings();
     }, []);
 
-    // 🔥 FUNCIÓN SOLO PARA CANCELAR (basada en la que funciona)
     const handleCancel = async (id, bookingData) => {
-        if (!confirm(`¿Cancelar turno de ${bookingData.cliente_nombre}?`)) return;
+        console.log('🎯 Iniciando cancelación para turno:', id);
         
-        try {
-            // Usar la función que sí funciona (updateBookingStatus)
-            await updateBookingStatus(id, 'Cancelado');
+        if (!confirm(`¿Cancelar turno de ${bookingData.cliente_nombre}?`)) {
+            console.log('❌ Cancelación abortada por usuario');
+            return;
+        }
+
+        const ok = await cancelBooking(id);
+        console.log('✅ Resultado cancelación:', ok);
+        
+        if (ok) {
+            const msg = `❌ Turno cancelado\n\n${bookingData.cliente_nombre}, tu turno del ${bookingData.fecha} a las ${formatTo12Hour(bookingData.hora_inicio)} fue cancelado.`;
+            window.open(`https://wa.me/${bookingData.cliente_whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
             
-            // WhatsApp
-            const phone = bookingData.cliente_whatsapp;
-            const msg = `❌ Turno cancelado\n\n${bookingData.cliente_nombre}, tu turno del ${bookingData.fecha} a las ${bookingData.hora_inicio} fue cancelado.`;
-            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-            
-            fetchBookings();
             alert('✅ Turno cancelado');
-        } catch (error) {
-            alert('Error al cancelar');
+            console.log('🔄 Recargando después de cancelar...');
+            await fetchBookings();
+        } else {
+            console.error('❌ Error en cancelBooking');
+            alert('❌ Error al cancelar');
         }
     };
 
-    const filteredBookings = filterDate 
+    const filteredBookings = filterDate
         ? bookings.filter(b => b.fecha === filterDate)
         : bookings;
 
+    console.log('👁️ Turnos a mostrar:', filteredBookings.length);
+
     return (
-        <div className="min-h-screen p-6">
-            <div className="max-w-5xl mx-auto space-y-6">
+        <div className="min-h-screen bg-gray-100 p-3 sm:p-6">
+            <div className="max-w-6xl mx-auto space-y-4">
                 {/* Header */}
                 <div className="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center">
-                    <h1 className="text-2xl font-bold text-gray-800">
-                        Panel Admin - Bennet Salon
-                    </h1>
-                    <button onClick={fetchBookings} className="p-2 bg-gray-100 rounded-full">
-                        <div className="icon-refresh-cw"></div>
-                    </button>
+                    <h1 className="text-xl font-bold">Panel Admin - Bennet Salon</h1>
+                    <button onClick={fetchBookings} className="p-2 bg-gray-100 rounded-full">↻</button>
                 </div>
 
                 {/* Filtro */}
-                <div className="bg-white p-4 rounded-xl shadow-sm flex items-center gap-4">
+                <div className="bg-white p-4 rounded-xl shadow-sm flex gap-3">
                     <input 
                         type="date" 
                         value={filterDate}
                         onChange={(e) => setFilterDate(e.target.value)}
-                        className="border border-gray-300 rounded-lg px-3 py-2"
+                        className="border rounded px-3 py-2"
                     />
                     {filterDate && (
-                        <button onClick={() => setFilterDate('')} className="text-sm text-red-500">
+                        <button onClick={() => setFilterDate('')} className="text-red-500">
                             Limpiar
                         </button>
                     )}
+                    <span className="ml-auto">Total: {filteredBookings.length}</span>
                 </div>
 
-                {/* Lista */}
                 {loading ? (
                     <div className="text-center py-12">Cargando...</div>
                 ) : (
-                    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                        <table className="w-full text-left">
-                            <thead>
-                                <tr>
-                                    <th className="p-4">Fecha/Hora</th>
-                                    <th className="p-4">Cliente</th>
-                                    <th className="p-4">WhatsApp</th>
-                                    <th className="p-4">Servicio</th>
-                                    <th className="p-4">Estado</th>
-                                    <th className="p-4">Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredBookings.map(booking => (
-                                    <tr key={booking.id}>
-                                        <td className="p-4">
-                                            {booking.fecha} {booking.hora_inicio}
-                                        </td>
-                                        <td className="p-4">{booking.cliente_nombre}</td>
-                                        <td className="p-4">{booking.cliente_whatsapp}</td>
-                                        <td className="p-4">{booking.servicio}</td>
-                                        <td className="p-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold
-                                                ${booking.estado === 'Confirmado' ? 'bg-green-100 text-green-700' : 
-                                                  booking.estado === 'Cancelado' ? 'bg-red-100 text-red-700' : 
-                                                  'bg-yellow-100 text-yellow-700'}`}>
-                                                {booking.estado}
-                                            </span>
-                                        </td>
-                                        <td className="p-4">
-                                            {booking.estado === 'Reservado' && (
-                                                <button 
-                                                    onClick={() => handleCancel(booking.id, booking)}
-                                                    className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                                                >
-                                                    Cancelar
-                                                </button>
-                                            )}
-                                        </td>
+                    <>
+                        {/* Vista Móvil - Tarjetas */}
+                        <div className="space-y-3 sm:hidden">
+                            {filteredBookings.map(b => (
+                                <div key={b.id} className="bg-white p-4 rounded-xl shadow-sm">
+                                    <div className="flex justify-between mb-2">
+                                        <span className="font-semibold">{b.fecha}</span>
+                                        <span className="text-sm bg-pink-100 text-pink-700 px-2 py-1 rounded-full">
+                                            {formatTo12Hour(b.hora_inicio)}
+                                        </span>
+                                    </div>
+                                    <div className="text-sm space-y-1">
+                                        <div>👤 {b.cliente_nombre}</div>
+                                        <div>📱 {b.cliente_whatsapp}</div>
+                                        <div>💅 {b.servicio}</div>
+                                    </div>
+                                    <div className="flex justify-between items-center mt-3 pt-2 border-t">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold
+                                            ${b.estado === 'Confirmado' ? 'bg-green-100 text-green-700' : 
+                                              b.estado === 'Reservado' ? 'bg-yellow-100 text-yellow-700' : 
+                                              'bg-red-100 text-red-700'}`}>
+                                            {b.estado}
+                                        </span>
+                                        {b.estado === 'Reservado' && (
+                                            <button 
+                                                onClick={() => handleCancel(b.id, b)} 
+                                                className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                                            >
+                                                ✗
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Vista Desktop - Tabla */}
+                        <div className="hidden sm:block bg-white rounded-xl shadow-sm overflow-hidden">
+                            <table className="w-full">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="p-4">Fecha/Hora</th>
+                                        <th>Cliente</th>
+                                        <th>WhatsApp</th>
+                                        <th>Servicio</th>
+                                        <th>Estado</th>
+                                        <th>Acción</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    {filteredBookings.map(b => (
+                                        <tr key={b.id} className="border-t">
+                                            <td className="p-4">{b.fecha} {formatTo12Hour(b.hora_inicio)}</td>
+                                            <td>{b.cliente_nombre}</td>
+                                            <td>{b.cliente_whatsapp}</td>
+                                            <td>{b.servicio}</td>
+                                            <td>
+                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold
+                                                    ${b.estado === 'Confirmado' ? 'bg-green-100 text-green-700' : 
+                                                      b.estado === 'Reservado' ? 'bg-yellow-100 text-yellow-700' : 
+                                                      'bg-red-100 text-red-700'}`}>
+                                                    {b.estado}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {b.estado === 'Reservado' && (
+                                                    <button 
+                                                        onClick={() => handleCancel(b.id, b)} 
+                                                        className="p-2 bg-red-500 text-white rounded-lg"
+                                                    >
+                                                        ✗
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
                 )}
             </div>
         </div>
