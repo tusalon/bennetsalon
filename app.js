@@ -1,4 +1,4 @@
-// app.js - Versión optimizada para internet lento
+// app.js - Bennet Salon con botón de instalación
 
 function App() {
     const [showWelcome, setShowWelcome] = React.useState(true);
@@ -10,11 +10,14 @@ function App() {
     });
     const [showForm, setShowForm] = React.useState(false);
     
-    // 🔥 NUEVO: Estado para detectar conexión lenta
+    // Estados para conexión
     const [connectionSlow, setConnectionSlow] = React.useState(false);
     const [isOffline, setIsOffline] = React.useState(!navigator.onLine);
+    
+    // Estado para instalación PWA
+    const [deferredPrompt, setDeferredPrompt] = React.useState(null);
 
-    // 🔥 NUEVO: Detectar cambios en la conexión
+    // Detectar cambios en la conexión
     React.useEffect(() => {
         const handleOnline = () => setIsOffline(false);
         const handleOffline = () => setIsOffline(true);
@@ -28,10 +31,9 @@ function App() {
         };
     }, []);
 
-    // 🔥 NUEVO: Detectar si la conexión es lenta
+    // Detectar si la conexión es lenta
     React.useEffect(() => {
         const timer = setTimeout(() => {
-            // Si después de 5 segundos no hay datos cargados, mostrar aviso
             if (!bookingData.service && !showWelcome) {
                 setConnectionSlow(true);
             }
@@ -39,6 +41,15 @@ function App() {
         
         return () => clearTimeout(timer);
     }, [showWelcome, bookingData.service]);
+
+    // Detectar evento de instalación PWA
+    React.useEffect(() => {
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+            console.log('✅ App lista para instalar');
+        });
+    }, []);
 
     const handleServiceSelect = (service) => {
         setBookingData(prev => ({ ...prev, service, time: null }));
@@ -95,7 +106,7 @@ function App() {
         <div className="min-h-screen bg-[#faf8f7] flex flex-col pb-20" data-name="app-container">
             <Header />
             
-            {/* 🔥 NUEVO: Banner de conexión lenta */}
+            {/* Banner de conexión lenta */}
             {connectionSlow && (
                 <div className="fixed top-0 left-0 right-0 bg-yellow-500 text-white text-center py-2 text-sm z-50 shadow-lg animate-fade-in">
                     <div className="flex items-center justify-center gap-2">
@@ -105,7 +116,7 @@ function App() {
                 </div>
             )}
 
-            {/* 🔥 NUEVO: Banner de modo offline */}
+            {/* Banner de modo offline */}
             {isOffline && (
                 <div className="fixed top-0 left-0 right-0 bg-orange-500 text-white text-center py-2 text-sm z-50 shadow-lg animate-fade-in">
                     <div className="flex items-center justify-center gap-2">
@@ -122,7 +133,7 @@ function App() {
                     onSelect={handleServiceSelect} 
                 />
 
-                {/* Step 2: Calendar - Show only after service is selected */}
+                {/* Step 2: Calendar */}
                 {bookingData.service && (
                     <Calendar 
                         selectedDate={bookingData.date} 
@@ -130,7 +141,7 @@ function App() {
                     />
                 )}
 
-                {/* Step 3: Time Slots - Show only after date is selected */}
+                {/* Step 3: Time Slots */}
                 {bookingData.service && bookingData.date && (
                     <TimeSlots 
                         service={bookingData.service} 
@@ -165,10 +176,28 @@ function App() {
                 </div>
             )}
 
+            {/* Botón de instalación PWA */}
+            {deferredPrompt && (
+                <button
+                    onClick={() => {
+                        deferredPrompt.prompt();
+                        deferredPrompt.userChoice.then(() => {
+                            setDeferredPrompt(null);
+                        });
+                    }}
+                    className="fixed bottom-24 left-6 z-50 bg-blue-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-all"
+                    title="Instalar App"
+                >
+                    <div className="icon-download text-xl"></div>
+                </button>
+            )}
+
             <WhatsAppButton />
         </div>
     );
 }
+
+// Detección de conexión lenta
 const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
 const isSlowConnection = connection && (
     connection.effectiveType === 'slow-2g' || 
@@ -177,8 +206,8 @@ const isSlowConnection = connection && (
 );
 
 if (isSlowConnection) {
-    // Modo ultra liviano: ocultar animaciones, reducir calidad
     document.body.classList.add('slow-connection');
 }
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
