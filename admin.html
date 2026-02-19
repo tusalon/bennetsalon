@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Uñas Mágicas</title>
+    <title>Admin - Bennet Salon</title>
     
-    <!-- PWA -->
-    <link rel="manifest" href="/tuturno/manifest.json">
-    <meta name="theme-color" content="#ec4899">
+    <!-- PWA con rutas Bennet Salon -->
+    <link rel="manifest" href="/bennetsalon/manifest.json">
+    <meta name="theme-color" content="#db2777">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Uñas Mágicas Admin">
-    <link rel="apple-touch-icon" href="/tuturno/icons/icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/tuturno/icons/icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="/tuturno/icons/icon-512x512.png">
+    <meta name="apple-mobile-web-app-title" content="Bennet Salon Admin">
+    <link rel="apple-touch-icon" href="/bennetsalon/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/bennetsalon/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/bennetsalon/icons/icon-512x512.png">
     
     <script src="https://resource.trickle.so/vendor_lib/unpkg/react@18/umd/react.production.min.js"></script>
     <script src="https://resource.trickle.so/vendor_lib/unpkg/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://resource.trickle.so/vendor_lib/unpkg/@babel/standalone/babel.min.js"></script>
-   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link href="https://resource.trickle.so/vendor_lib/unpkg/lucide-static@0.516.0/font/lucide.css" rel="stylesheet">
     
     <style>
@@ -90,7 +91,7 @@
             let updateNotificationShown = false;
 
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/tuturno/sw.js')
+                navigator.serviceWorker.register('/bennetsalon/sw.js')
                     .then(registration => {
                         console.log('✅ Service Worker registrado (admin)');
 

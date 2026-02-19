@@ -1,17 +1,45 @@
-// components/WhatsAppButton.js - Bennet Salon
+// utils/timeLogic.js - Bennet Salon (solo 2 turnos)
 
-function WhatsAppButton() {
-    return (
-        <a 
-            href="https://wa.me/5354438629" 
-            target="_blank" 
-            className="fixed bottom-6 right-6 z-50 bg-[#25D366] text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:bg-[#20bd5a] transition-all transform hover:scale-110 group"
-            title="Chat en WhatsApp"
-        >
-            <div className="icon-message-circle text-3xl"></div>
-            <span className="absolute right-full mr-3 bg-white text-gray-800 px-3 py-1 rounded-lg text-sm font-medium shadow-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                ¡Hablemos!
-            </span>
-        </a>
-    );
+function timeToMinutes(timeStr) {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+}
+
+function minutesToTime(totalMinutes) {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+}
+
+function formatTo12Hour(timeStr) {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    let hour12 = hours % 12;
+    hour12 = hour12 === 0 ? 12 : hour12;
+    return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
+}
+
+// SOLO 2 TURNOS: 8:00 AM y 2:00 PM
+function generateBaseSlots(durationMinutes) {
+    return ["08:00", "14:00"];
+}
+
+function filterAvailableSlots(baseSlots, durationMinutes, existingBookings) {
+    return baseSlots.filter(slotStartStr => {
+        const slotStart = timeToMinutes(slotStartStr);
+        const slotEnd = slotStart + durationMinutes;
+
+        const hasConflict = existingBookings.some(booking => {
+            const bookingStart = timeToMinutes(booking.hora_inicio);
+            const bookingEnd = timeToMinutes(booking.hora_fin);
+            return (slotStart < bookingEnd) && (slotEnd > bookingStart);
+        });
+
+        return !hasConflict;
+    });
+}
+
+function calculateEndTime(startTimeStr, durationMinutes) {
+    const startMins = timeToMinutes(startTimeStr);
+    return minutesToTime(startMins + durationMinutes);
 }

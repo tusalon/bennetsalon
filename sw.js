@@ -1,31 +1,30 @@
-// sw.js - Service Worker para Uñas Mágicas
+// sw.js - Service Worker para Bennet Salon
 
-const CACHE_NAME = 'unas-magicas-v1';
+const CACHE_NAME = 'bennetsalon-v1';
 const urlsToCache = [
-  '/tuturno/',
-  '/tuturno/index.html',
-  '/tuturno/admin.html',
-  '/tuturno/app.js',
-  '/tuturno/admin-app.js',
-  '/tuturno/manifest.json',
-  '/tuturno/utils/api.js',
-  '/tuturno/utils/timeLogic.js',
-  '/tuturno/components/Header.js',
-  '/tuturno/components/WelcomeScreen.js',
-  '/tuturno/components/ServiceSelection.js',
-  '/tuturno/components/Calendar.js',
-  '/tuturno/components/TimeSlots.js',
-  '/tuturno/components/BookingForm.js',
-  '/tuturno/components/Confirmation.js',
-  '/tuturno/components/WhatsAppButton.js',
+  '/bennetsalon/',
+  '/bennetsalon/index.html',
+  '/bennetsalon/admin.html',
+  '/bennetsalon/app.js',
+  '/bennetsalon/admin-app.js',
+  '/bennetsalon/manifest.json',
+  '/bennetsalon/utils/api.js',
+  '/bennetsalon/utils/timeLogic.js',
+  '/bennetsalon/components/Header.js',
+  '/bennetsalon/components/WelcomeScreen.js',
+  '/bennetsalon/components/ServiceSelection.js',
+  '/bennetsalon/components/Calendar.js',
+  '/bennetsalon/components/TimeSlots.js',
+  '/bennetsalon/components/BookingForm.js',
+  '/bennetsalon/components/Confirmation.js',
+  '/bennetsalon/components/WhatsAppButton.js',
   'https://resource.trickle.so/vendor_lib/unpkg/react@18/umd/react.production.min.js',
   'https://resource.trickle.so/vendor_lib/unpkg/react-dom@18/umd/react-dom.production.min.js',
   'https://resource.trickle.so/vendor_lib/unpkg/@babel/standalone/babel.min.js',
-  'https://cdn.tailwindcss.com',
+  'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4',
   'https://resource.trickle.so/vendor_lib/unpkg/lucide-static@0.516.0/font/lucide.css'
 ];
 
-// Instalación
 self.addEventListener('install', event => {
   console.log('Service Worker instalando...');
   self.skipWaiting();
@@ -38,7 +37,6 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activación
 self.addEventListener('activate', event => {
   console.log('Service Worker activando...');
   event.waitUntil(
@@ -64,7 +62,6 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Estrategia de cache
 self.addEventListener('fetch', event => {
   if (event.request.url.includes('supabase.co')) {
     return;
@@ -96,7 +93,7 @@ self.addEventListener('fetch', event => {
           })
           .catch(() => {
             if (event.request.mode === 'navigate') {
-              return caches.match('/tuturno/index.html');
+              return caches.match('/bennetsalon/index.html');
             }
           });
       })
