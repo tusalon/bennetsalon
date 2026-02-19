@@ -1,21 +1,45 @@
-// admin-app.js - Bennet Salon (VERSIÓN FINAL)
+// admin-app.js - Bennet Salon (basado en Uñas Mágicas)
 
 const SUPABASE_URL = 'https://bjpzdeixwkgpiqdjwclk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqcHpkZWl4d2tncGlxZGp3Y2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NTUxMjIsImV4cCI6MjA4NzAzMTEyMn0.cJXxeKEj47kCir8lC91YWonuo7XN8UytBn58ki_cWoU';
 
 const TABLE_NAME = 'bennet.salon';
 
-let cache = {
-    allBookings: null,
-    allBookingsTimestamp: null
-};
-const CACHE_DURATION = 5 * 60 * 1000;
-
-async function getAllBookings() {
-    if (cache.allBookings && (Date.now() - cache.allBookingsTimestamp) < CACHE_DURATION) {
-        return cache.allBookings;
+// 🔥 FUNCIÓN DIRECTA DE UPDATE (como en Uñas Mágicas)
+async function updateBookingStatus(id, newStatus) {
+    try {
+        console.log('🔄 Actualizando turno:', id, 'a', newStatus);
+        
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/${encodeURIComponent(TABLE_NAME)}?id=eq.${id}`,
+            {
+                method: 'PATCH',
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify({ estado: newStatus })
+            }
+        );
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Error response:', response.status, errorText);
+            throw new Error(`Error updating booking: ${response.status}`);
+        }
+        
+        console.log('✅ Turno actualizado correctamente');
+        return { success: true };
+    } catch (error) {
+        console.error('❌ Error updating booking:', error);
+        throw error;
     }
+}
 
+// Función para obtener todos los turnos
+async function getAllBookings() {
     try {
         const response = await fetch(
             `${SUPABASE_URL}/rest/v1/${encodeURIComponent(TABLE_NAME)}?select=*&order=fecha.desc,hora_inicio.asc`,
@@ -31,37 +55,10 @@ async function getAllBookings() {
         if (!response.ok) throw new Error('Error fetching bookings');
         
         const data = await response.json();
-        cache.allBookings = data;
-        cache.allBookingsTimestamp = Date.now();
         return data;
     } catch (error) {
         console.error('Error fetching all bookings:', error);
-        return cache.allBookings || [];
-    }
-}
-
-async function updateBookingStatus(id, newStatus) {
-    try {
-        const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/${encodeURIComponent(TABLE_NAME)}?id=eq.${id}`,
-            {
-                method: 'PATCH',
-                headers: {
-                    'apikey': SUPABASE_ANON_KEY,
-                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ estado: newStatus })
-            }
-        );
-        
-        if (!response.ok) throw new Error('Error updating booking');
-        
-        cache.allBookings = null;
-        return { success: true };
-    } catch (error) {
-        console.error('Error updating booking:', error);
-        throw error;
+        return [];
     }
 }
 
@@ -110,14 +107,11 @@ function AdminApp() {
             
             window.open(`https://wa.me/${phone}?text=${encodeURIComponent(mensaje)}`, '_blank');
             
-            // 🔥 RECARGAR LISTA INMEDIATAMENTE
-            cache.allBookings = null;
             await fetchBookings();
-            
             alert(`✅ Turno ${newStatus} correctamente`);
             
         } catch (error) {
-            console.error('Error:', error);
+            console.error('❌ Error:', error);
             alert('❌ Error al actualizar el turno');
         }
     };
@@ -150,9 +144,6 @@ function AdminApp() {
                             Limpiar
                         </button>
                     )}
-                    <span className="ml-auto text-sm text-gray-500">
-                        Total: {filteredBookings.length} turnos
-                    </span>
                 </div>
 
                 {loading ? (
